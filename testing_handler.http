@@ -3,7 +3,7 @@ POST http://localhost:8080/edit/5
 Content-Type: application/json
 
 {
-  "Id": 5,
+  "Id": 1,
   "Title": "Lorem ipsum",
   "Content": "Dolor sit amet <b>foo</b>",
   "Categories": [1,2,7]

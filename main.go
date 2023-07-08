@@ -23,14 +23,13 @@ type News struct {
 var db *sqlx.DB
 
 func init() {
-	// loads values from .env into the system
+	// Загрузка значений из файла .env в систему
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
 }
 
 func main() {
-
 	// Инициализация подключения к базе данных
 	initDB()
 
@@ -69,14 +68,14 @@ func initDB() {
 	db.SetMaxIdleConns(5)
 
 	// Проверка соединения с базой данных
-	err = db.Ping()
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("Connected to database")
 }
 
+// Функция изменения новости
 func editNews(c *gin.Context) {
 	// Получение значения параметра Id из URL
 	id, err := strconv.Atoi(c.Param("Id"))
@@ -92,53 +91,56 @@ func editNews(c *gin.Context) {
 		return
 	}
 
-	// Вызов хранимой процедуры для изменения новости
-	_, err = db.Exec("CALL content.UpdateNews(?, ?, ?)", id, news.Title, news.Content)
-	if err != nil {
+	// Вызов хранимой процедуры для изменения новости в таблице News
+	if _, err := db.Exec("CALL content.UpdateNews(?, ?, ?)", id, news.Title, news.Content); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update news"})
 		return
 	}
 
-	stringNumbers := make([]string, len(news.Categories))
-	for i, num := range news.Categories {
-		stringNumbers[i] = fmt.Sprint(num)
+	// Парсинг идентификаторов из массива Categories
+	var stringNumbers []string
+	for _, num := range news.Categories {
+		stringNumbers = append(stringNumbers, strconv.Itoa(num))
 	}
 	result := strings.Join(stringNumbers, ",")
 
-	_, err = db.Exec("CALL content.UpdateCategory(?, ?)", id, result)
+	// Изменение идентификаторов в таблице NewsCategories
+	if _, err := db.Exec("CALL content.UpdateCategory(?, ?)", id, result); err != nil {
+		log.Println(err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func getNewsList(c *gin.Context) {
 	// Вызов хранимой процедуры для получения списка новостей
-	news_resp, err := db.Queryx("CALL content.GetNews()")
+	newsResp, err := db.Queryx("CALL content.GetNews()")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get news list"})
 		return
 	}
-	defer news_resp.Close()
+	defer newsResp.Close()
 
 	// Сбор данных новостей
 	var newsList []News
-	for news_resp.Next() {
+	for newsResp.Next() {
 		var news News
-		if err := news_resp.StructScan(&news); err != nil {
+		if err := newsResp.StructScan(&news); err != nil {
 			log.Println(err)
-
+			continue
 		}
+
 		categories, err := db.Queryx("CALL content.GetCategories(?)", news.ID)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-
 		defer categories.Close()
 
+		// Сбор данных категорий
 		var id int
 		for categories.Next() {
-			err := categories.Scan(&id)
-			if err != nil {
+			if err := categories.Scan(&id); err != nil {
 				log.Println(err)
 				continue
 			}
