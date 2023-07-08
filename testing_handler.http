@@ -1,0 +1,14 @@
+### Send POST request with json body
+POST http://localhost:8080/edit/5
+Content-Type: application/json
+
+{
+  "Id": 5,
+  "Title": "Lorem ipsum",
+  "Content": "Dolor sit amet <b>foo</b>",
+  "Categories": [1,2,7]
+}
+
+### Send GET request
+GET http://localhost:8080/list
+Content-Type: application/json
