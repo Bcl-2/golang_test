@@ -1,0 +1,11 @@
+[INFO] 2023/07/09 11:51 Starting server
+[INFO] 2023/07/09 12:03 Starting server
+[INFO] 2023/07/09 12:03 Connected to DataBase at:root:qwerty123@tcp(0.0.0.0:3306)/content
+[INFO] 2023/07/09 12:03 Request: POST /edit/2Body:&{0xc000516000 <nil> <nil> false true {0 0} true false false 0x641740}
+[INFO] 2023/07/09 12:03 Executed Stored Procedure content.UpdateNews with input params: %!s(int=2), Lorem ipsum, Dolor sit amet <b>foo</b>
+[INFO] 2023/07/09 12:03 Executed Stored Procedure content.UpdateCategory with input params: 1,2,7
+[INFO] 2023/07/09 12:11 Starting server
+[INFO] 2023/07/09 12:11 Connected to DataBase at:root:qwerty123@tcp(0.0.0.0:3306)/content
+[INFO] 2023/07/09 12:11 Request: POST, Request method: /edit/2, Request body: {%!s(int=2) Lorem ipsum Dolor sit amet <b>foo</b> [%!s(int=1) %!s(int=2) %!s(int=7)]}
+[INFO] 2023/07/09 12:11 Executed Stored Procedure content.UpdateNews with input params: 2, Lorem ipsum, Dolor sit amet <b>foo</b>
+[INFO] 2023/07/09 12:11 Executed Stored Procedure content.UpdateCategory with id: 2 and input params: 1,2,7

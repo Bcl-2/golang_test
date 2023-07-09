@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
+	glog "github.com/kataras/golog"
 	"log"
 	"net/http"
 	"os"
@@ -31,6 +32,8 @@ func init() {
 
 func main() {
 	// Инициализация подключения к базе данных
+	initLogger()
+	glog.Info("Starting server")
 	initDB()
 
 	router := gin.Default()
@@ -60,19 +63,39 @@ func initDB() {
 	// Установка соединения с базой данных
 	db, err = sqlx.Open("mysql", dataSourceName)
 	if err != nil {
+		glog.Fatal("Cannot connect to DataBase:", err)
 		log.Fatal(err)
 	}
-
+	glog.Info("Connected to DataBase at:", dataSourceName)
 	// Установка connection pool
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 
 	// Проверка соединения с базой данных
 	if err := db.Ping(); err != nil {
+		glog.Fatal("Cannot access DataBase:", err)
 		log.Fatal(err)
 	}
 
 	log.Println("Connected to database")
+}
+func initLogger() {
+	glog.SetLevel("info")
+
+	infof, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	glog.SetLevelOutput("info", infof)
+
+	// open infoerr.txt  append if exist (os.O_APPEND) or create if not (os.O_CREATE) and read write (os.O_WRONLY)
+	errf, err := os.OpenFile("infoerr.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	glog.SetLevelOutput("error", errf)
+
 }
 
 // Функция изменения новости
@@ -80,6 +103,7 @@ func editNews(c *gin.Context) {
 	// Получение значения параметра Id из URL
 	id, err := strconv.Atoi(c.Param("Id"))
 	if err != nil {
+		glog.Error("Cannot parse id from URL:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
 		return
 	}
@@ -87,16 +111,19 @@ func editNews(c *gin.Context) {
 	// Получение данных из тела запроса
 	var news News
 	if err := c.ShouldBindJSON(&news); err != nil {
+		glog.Error("Cannot unmarshal body:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
+	glog.Infof("Request: %s, Request method: %s, Request body: %s", c.Request.Method, c.Request.URL, news)
 
 	// Вызов хранимой процедуры для изменения новости в таблице News
 	if _, err := db.Exec("CALL content.UpdateNews(?, ?, ?)", id, news.Title, news.Content); err != nil {
+		glog.Error("Cannot execute Stored Procedure: content.UpdateNews:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update news"})
 		return
 	}
-
+	glog.Infof("Executed Stored Procedure content.UpdateNews with input params: %d, %s, %s", id, news.Title, news.Content)
 	// Парсинг идентификаторов из массива Categories
 	var stringNumbers []string
 	for _, num := range news.Categories {
@@ -107,7 +134,10 @@ func editNews(c *gin.Context) {
 	// Изменение идентификаторов в таблице NewsCategories
 	if _, err := db.Exec("CALL content.UpdateCategory(?, ?)", id, result); err != nil {
 		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update news"})
+		return
 	}
+	glog.Infof("Executed Stored Procedure content.UpdateCategory with id: %d and input params: %s", id, result)
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }

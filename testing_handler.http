@@ -1,9 +1,9 @@
 ### Send POST request with json body
-POST http://localhost:8080/edit/5
+POST http://localhost:8080/edit/2
 Content-Type: application/json
 
 {
-  "Id": 1,
+  "Id": 2,
   "Title": "Lorem ipsum",
   "Content": "Dolor sit amet <b>foo</b>",
   "Categories": [1,2,7]

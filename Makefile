@@ -9,4 +9,7 @@ build: main.go
 	go build main.go
 	./main
 
+getConfig:
+	nano .env
+
 
